@@ -23,6 +23,26 @@ class App extends StatelessWidget {
             themeMode: themeController.themeMode,
             initialRoute: AppRoutes.home,
             onGenerateRoute: AppRouter.onGenerateRoute,
+            builder: (context, child) {
+              return Stack(
+                children: [
+                  if (child != null) child,
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: IgnorePointer(
+                      child: Opacity(
+                        opacity: 0.15,
+                        child: Image.asset(
+                          'assets/trade_mark.png',
+                          width: 60,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
