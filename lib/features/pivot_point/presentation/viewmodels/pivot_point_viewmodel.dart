@@ -44,6 +44,15 @@ class PivotPointViewModel extends ChangeNotifier {
   List<MarketData> get newsmakerHistories =>
       _historyDatabase[_selectedNewsmakerSymbol] ?? [];
 
+  // Fungsi untuk mendapatkan data terbaru dari instrumen tertentu
+  MarketData? getLatestDataFor(String symbol) {
+    final list = _historyDatabase[symbol];
+    if (list != null && list.isNotEmpty) {
+      return list.first;
+    }
+    return null;
+  }
+
   // Pagination states
   int _currentPage = 0;
   final int _limit = 20;

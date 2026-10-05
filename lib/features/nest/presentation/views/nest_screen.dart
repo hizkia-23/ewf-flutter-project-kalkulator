@@ -7,7 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../viewmodels/nest_viewmodel.dart';
 import 'package:kalkulator_pivot/core/services/history_service.dart';
-
+import '../../../../core/services/image_capture_service.dart';
 class NestScreen extends StatelessWidget {
   const NestScreen({super.key});
 
@@ -37,6 +37,7 @@ class _NestViewState extends State<_NestView>
 
   NestViewModel? _viewModelRef;
   bool _hasInjectedInitialData = false;
+  final GlobalKey _resultKey = GlobalKey();
 
   @override
   void initState() {
@@ -369,6 +370,46 @@ class _NestViewState extends State<_NestView>
   Widget _buildManualInputs(BuildContext context) {
     return Column(
       children: [
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 8.0,
+          children: [
+            ActionChip(
+              label: const Text('Gold', style: TextStyle(fontSize: 11)),
+              onPressed: () {
+                final data = context.read<NestViewModel>().getLatestDataFor('Gold');
+                if (data != null) {
+                  setState(() {
+                    closeController.text = data.close.toStringAsFixed(2);
+                  });
+                }
+              },
+            ),
+            ActionChip(
+              label: const Text('Hang Seng', style: TextStyle(fontSize: 11)),
+              onPressed: () {
+                final data = context.read<NestViewModel>().getLatestDataFor('Hang Seng');
+                if (data != null) {
+                  setState(() {
+                    closeController.text = data.close.toStringAsFixed(2);
+                  });
+                }
+              },
+            ),
+            ActionChip(
+              label: const Text('Nikkei', style: TextStyle(fontSize: 11)),
+              onPressed: () {
+                final data = context.read<NestViewModel>().getLatestDataFor('Nikkei');
+                if (data != null) {
+                  setState(() {
+                    closeController.text = data.close.toStringAsFixed(2);
+                  });
+                }
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         _inputField(
           context: context,
           label: 'CLOSE (KEMARIN)',
@@ -448,7 +489,15 @@ class _NestViewState extends State<_NestView>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        RepaintBoundary(
+          key: _resultKey,
+          child: Container(
+            color: context.scaffoldBg,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
           children: [
             Expanded(
               child: Container(
@@ -551,6 +600,51 @@ class _NestViewState extends State<_NestView>
             ],
           ),
         ),
+                const SizedBox(height: 16),
+                RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      height: 1.5,
+                    ),
+                    children: [
+                      const TextSpan(text: 'Konsep Nest membandingkan harga '),
+                      TextSpan(
+                        text: 'Pembukaan (Open) hari ini ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: context.textPrimary,
+                        ),
+                      ),
+                      const TextSpan(text: 'dengan harga '),
+                      TextSpan(
+                        text: 'Penutupan (Close) kemarin ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: context.textPrimary,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: 'untuk menentukan aksi beli dan jual secara ringkas.\n\n',
+                      ),
+                      const TextSpan(text: '\u2022  Open < Close  \u2192  '),
+                      const TextSpan(
+                        text: 'BUY\n',
+                        style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF16A34A)),
+                      ),
+                      const TextSpan(text: '\u2022  Open > Close  \u2192  '),
+                      const TextSpan(
+                        text: 'SELL',
+                        style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFFDC2626)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 16),
 
         SizedBox(
@@ -576,6 +670,36 @@ class _NestViewState extends State<_NestView>
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
               ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final success = await ImageCaptureService.captureAndSave(_resultKey, "Nest");
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(success ? 'Gambar berhasil disimpan ke galeri' : 'Gagal menyimpan gambar'),
+                  backgroundColor: success ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            icon: const Icon(Icons.image_outlined, size: 18),
+            label: const Text(
+              'Simpan sebagai Gambar',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
         ),

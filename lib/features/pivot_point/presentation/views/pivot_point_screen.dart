@@ -7,7 +7,7 @@ import '../../../../core/utils/number_formatter.dart';
 import 'package:flutter/services.dart';
 import '../viewmodels/pivot_point_viewmodel.dart';
 import '../widgets/newsmaker_table_widget.dart';
-
+import '../../../../core/services/image_capture_service.dart';
 class PivotPointScreen extends StatelessWidget {
   const PivotPointScreen({super.key});
 
@@ -39,6 +39,7 @@ class _PivotPointViewState extends State<_PivotPointView>
 
   PivotPointViewModel? _viewModelRef;
   bool _hasInjectedInitialData = false;
+  final GlobalKey _resultKey = GlobalKey();
 
   @override
   void initState() {
@@ -378,6 +379,52 @@ class _PivotPointViewState extends State<_PivotPointView>
   Widget _buildManualInputs(BuildContext context) {
     return Column(
       children: [
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 8.0,
+          children: [
+            ActionChip(
+              label: const Text('Gold', style: TextStyle(fontSize: 11)),
+              onPressed: () {
+                final data = context.read<PivotPointViewModel>().getLatestDataFor('Gold');
+                if (data != null) {
+                  setState(() {
+                    highController.text = data.high.toStringAsFixed(2);
+                    lowController.text = data.low.toStringAsFixed(2);
+                    closeController.text = data.close.toStringAsFixed(2);
+                  });
+                }
+              },
+            ),
+            ActionChip(
+              label: const Text('Hang Seng', style: TextStyle(fontSize: 11)),
+              onPressed: () {
+                final data = context.read<PivotPointViewModel>().getLatestDataFor('Hang Seng');
+                if (data != null) {
+                  setState(() {
+                    highController.text = data.high.toStringAsFixed(2);
+                    lowController.text = data.low.toStringAsFixed(2);
+                    closeController.text = data.close.toStringAsFixed(2);
+                  });
+                }
+              },
+            ),
+            ActionChip(
+              label: const Text('Nikkei', style: TextStyle(fontSize: 11)),
+              onPressed: () {
+                final data = context.read<PivotPointViewModel>().getLatestDataFor('Nikkei');
+                if (data != null) {
+                  setState(() {
+                    highController.text = data.high.toStringAsFixed(2);
+                    lowController.text = data.low.toStringAsFixed(2);
+                    closeController.text = data.close.toStringAsFixed(2);
+                  });
+                }
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         _inputField(
           context: context,
           label: 'HIGH',
@@ -480,7 +527,15 @@ class _PivotPointViewState extends State<_PivotPointView>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        RepaintBoundary(
+          key: _resultKey,
+          child: Container(
+            color: context.scaffoldBg,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
           children: [
             Expanded(
               child: Container(
@@ -642,6 +697,42 @@ class _PivotPointViewState extends State<_PivotPointView>
             ],
           ),
         ),
+                const SizedBox(height: 16),
+                RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      height: 1.5,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: 'Pivot Point',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: context.textPrimary,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: ' adalah harga wajar atau harga pasaran, untuk menentukan aksi beli dan jual yang mengacu pada harga pembukaan (Open).\n\n',
+                      ),
+                      const TextSpan(text: '\u2022  Open < Pivot Point  \u2192  '),
+                      const TextSpan(
+                        text: 'BUY\n',
+                        style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF16A34A)),
+                      ),
+                      const TextSpan(text: '\u2022  Open > Pivot Point  \u2192  '),
+                      const TextSpan(
+                        text: 'SELL',
+                        style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFFDC2626)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 16),
 
         SizedBox(
@@ -667,6 +758,36 @@ class _PivotPointViewState extends State<_PivotPointView>
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
               ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final success = await ImageCaptureService.captureAndSave(_resultKey, "Pivot");
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(success ? 'Gambar berhasil disimpan ke galeri' : 'Gagal menyimpan gambar'),
+                  backgroundColor: success ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            icon: const Icon(Icons.image_outlined, size: 18),
+            label: const Text(
+              'Simpan sebagai Gambar',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
         ),
