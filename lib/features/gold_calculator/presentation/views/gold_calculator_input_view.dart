@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -28,6 +29,13 @@ class _GoldCalculatorInputViewState extends State<GoldCalculatorInputView> {
   void initState() {
     super.initState();
     viewModel = GoldCalculatorViewModel();
+    viewModel.reset();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        context.read<GoldCalculatorViewModel>().reset();
+      } catch (_) {}
+    });
     _loadLiveRate();
   }
 
@@ -45,11 +53,32 @@ class _GoldCalculatorInputViewState extends State<GoldCalculatorInputView> {
 
   @override
   void dispose() {
+    viewModel.reset();
+    try {
+      context.read<GoldCalculatorViewModel>().reset();
+    } catch (_) {}
+    hbController.clear();
+    hjController.clear();
+    modalController.clear();
+    kursController.clear();
     hbController.dispose();
     hjController.dispose();
     modalController.dispose();
     kursController.dispose();
     super.dispose();
+  }
+
+  void _clearAllInputs() {
+    hbController.clear();
+    hjController.clear();
+    modalController.clear();
+    viewModel.reset();
+    try {
+      context.read<GoldCalculatorViewModel>().reset();
+    } catch (_) {}
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _handleCalculate() {
@@ -74,7 +103,9 @@ class _GoldCalculatorInputViewState extends State<GoldCalculatorInputView> {
           ...viewModel.hasil!,
           'viewModel': viewModel,
         },
-      );
+      ).then((_) {
+        _clearAllInputs();
+      });
     }
   }
 

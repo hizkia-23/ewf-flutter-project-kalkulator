@@ -1,18 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/services/history_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../viewmodels/history_viewmodel.dart';
 
-class HistoryScreen extends StatefulWidget {
+class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => HistoryViewModel(),
+      child: const _HistoryView(),
+    );
+  }
 }
 
-class _HistoryScreenState extends State<HistoryScreen>
+class _HistoryView extends StatefulWidget {
+  const _HistoryView();
+
+  @override
+  State<_HistoryView> createState() => _HistoryViewState();
+}
+
+class _HistoryViewState extends State<_HistoryView>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -31,9 +45,10 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   @override
   Widget build(BuildContext context) {
-    final goldHistory = HistoryService.instance.goldHistory;
-    final pivotHistory = HistoryService.instance.pivotHistory;
-    final nestHistory = HistoryService.instance.nestHistory; // 👇 Tarik data Nest
+    final viewModel = context.watch<HistoryViewModel>();
+    final goldHistory = viewModel.goldHistoryList;
+    final pivotHistory = viewModel.pivotHistoryList;
+    final nestHistory = viewModel.nestHistoryList;
 
     return Scaffold(
       backgroundColor: context.scaffoldBg,
@@ -77,10 +92,11 @@ class _HistoryScreenState extends State<HistoryScreen>
                               child: Text('Batal', style: TextStyle(color: context.textMuted)),
                             ),
                             TextButton(
-                              onPressed: () {
-                                HistoryService.instance.clearAll();
-                                Navigator.pop(context);
-                                setState(() {});
+                              onPressed: () async {
+                                await viewModel.clearAll();
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                }
                               },
                               child: const Text(
                                 'Hapus',
@@ -239,26 +255,17 @@ class _HistoryScreenState extends State<HistoryScreen>
                   _GoldHistoryTab(
                     goldHistory: goldHistory,
                     onTap: (entry) => Navigator.of(context).pushNamed(AppRoutes.goldDetail, arguments: entry),
-                    onDelete: (entry) async {
-                      await HistoryService.instance.deleteGoldItem(entry.id);
-                      setState(() {});
-                    },
+                    onDelete: (entry) => viewModel.deleteItem(entry.id, 'gold'),
                   ),
                   _PivotHistoryTab(
                     pivotHistory: pivotHistory,
                     onTap: (entry) => Navigator.of(context).pushNamed(AppRoutes.pivotDetail, arguments: entry),
-                    onDelete: (entry) async {
-                      await HistoryService.instance.deletePivotItem(entry.id);
-                      setState(() {});
-                    },
+                    onDelete: (entry) => viewModel.deleteItem(entry.id, 'pivot'),
                   ),
                   _NestHistoryTab(
                     nestHistory: nestHistory,
                     onTap: (entry) => Navigator.of(context).pushNamed(AppRoutes.nestDetail, arguments: entry),
-                    onDelete: (entry) async {
-                      await HistoryService.instance.deleteNestItem(entry.id);
-                      setState(() {});
-                    },
+                    onDelete: (entry) => viewModel.deleteItem(entry.id, 'nest'),
                   ),
                 ],
               ),
@@ -295,8 +302,9 @@ class _GoldHistoryTab extends StatelessWidget {
         final isPos = entry.keuntunganBersih >= 0;
         return Dismissible(
           key: ValueKey(entry.id),
-          direction: DismissDirection.endToStart,
-          background: _DismissBackground(),
+          direction: DismissDirection.horizontal,
+          background: const _DismissBackground(alignment: Alignment.centerLeft),
+          secondaryBackground: const _DismissBackground(alignment: Alignment.centerRight),
           confirmDismiss: (_) => _confirmDelete(context),
           onDismissed: (_) => onDelete(entry),
           child: Container(
@@ -363,6 +371,22 @@ class _GoldHistoryTab extends StatelessWidget {
                               ],
                             ),
                           ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.delete_outline_rounded,
+                              size: 20,
+                              color: context.textMuted,
+                            ),
+                            tooltip: 'Hapus riwayat',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () async {
+                              final confirmed = await _confirmDelete(context);
+                              if (confirmed == true) {
+                                await onDelete(entry);
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 4),
                           Icon(
                             Icons.arrow_forward_ios_rounded,
                             size: 14,
@@ -463,8 +487,9 @@ class _PivotHistoryTab extends StatelessWidget {
         final entry = pivotHistory[index];
         return Dismissible(
           key: ValueKey(entry.id),
-          direction: DismissDirection.endToStart,
-          background: _DismissBackground(),
+          direction: DismissDirection.horizontal,
+          background: const _DismissBackground(alignment: Alignment.centerLeft),
+          secondaryBackground: const _DismissBackground(alignment: Alignment.centerRight),
           confirmDismiss: (_) => _confirmDelete(context),
           onDismissed: (_) => onDelete(entry),
           child: Container(
@@ -533,6 +558,22 @@ class _PivotHistoryTab extends StatelessWidget {
                               ],
                             ),
                           ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.delete_outline_rounded,
+                              size: 20,
+                              color: context.textMuted,
+                            ),
+                            tooltip: 'Hapus riwayat',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () async {
+                              final confirmed = await _confirmDelete(context);
+                              if (confirmed == true) {
+                                await onDelete(entry);
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 4),
                           Icon(
                             Icons.arrow_forward_ios_rounded,
                             size: 14,
@@ -632,8 +673,9 @@ class _NestHistoryTab extends StatelessWidget {
         final entry = nestHistory[index];
         return Dismissible(
           key: ValueKey(entry.id),
-          direction: DismissDirection.endToStart,
-          background: _DismissBackground(),
+          direction: DismissDirection.horizontal,
+          background: const _DismissBackground(alignment: Alignment.centerLeft),
+          secondaryBackground: const _DismissBackground(alignment: Alignment.centerRight),
           confirmDismiss: (_) => _confirmDelete(context),
           onDismissed: (_) => onDelete(entry),
           child: Container(
@@ -702,6 +744,22 @@ class _NestHistoryTab extends StatelessWidget {
                               ],
                             ),
                           ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.delete_outline_rounded,
+                              size: 20,
+                              color: context.textMuted,
+                            ),
+                            tooltip: 'Hapus riwayat',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () async {
+                              final confirmed = await _confirmDelete(context);
+                              if (confirmed == true) {
+                                await onDelete(entry);
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 4),
                           Icon(
                             Icons.arrow_forward_ios_rounded,
                             size: 14,
@@ -797,16 +855,24 @@ Future<bool?> _confirmDelete(BuildContext context) {
 
 /// Latar belakang merah dengan ikon hapus saat kartu di-swipe
 class _DismissBackground extends StatelessWidget {
+  final Alignment alignment;
+
+  const _DismissBackground({this.alignment = Alignment.centerRight});
+
   @override
   Widget build(BuildContext context) {
+    final isLeft = alignment == Alignment.centerLeft;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: const Color(0xFFDC2626),
         borderRadius: BorderRadius.circular(16),
       ),
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 24),
+      alignment: alignment,
+      padding: EdgeInsets.only(
+        left: isLeft ? 24 : 0,
+        right: isLeft ? 0 : 24,
+      ),
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

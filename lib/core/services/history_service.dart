@@ -272,33 +272,44 @@ class HistoryService {
 
   // ── Individual delete methods ──────────────────────────────────────────────
 
-  Future<void> deleteGoldItem(String id) async {
-    _goldHistory.removeWhere((e) => e.id == id);
+  Future<void> deleteGoldItem(dynamic id) async {
+    final strId = id.toString();
+    _goldHistory.removeWhere((e) => e.id == strId);
     try {
-      final db = await DatabaseHelper.instance.database;
-      await db.delete('gold_history', where: 'id = ?', whereArgs: [id]);
+      await DatabaseHelper.instance.deleteById('gold_history', strId);
     } catch (e) {
       if (kDebugMode) print('Gagal menghapus item Emas dari SQLite: $e');
     }
   }
 
-  Future<void> deletePivotItem(String id) async {
-    _pivotHistory.removeWhere((e) => e.id == id);
+  Future<void> deletePivotItem(dynamic id) async {
+    final strId = id.toString();
+    _pivotHistory.removeWhere((e) => e.id == strId);
     try {
-      final db = await DatabaseHelper.instance.database;
-      await db.delete('pivot_history', where: 'id = ?', whereArgs: [id]);
+      await DatabaseHelper.instance.deleteById('pivot_history', strId);
     } catch (e) {
       if (kDebugMode) print('Gagal menghapus item Pivot dari SQLite: $e');
     }
   }
 
-  Future<void> deleteNestItem(String id) async {
-    _nestHistory.removeWhere((e) => e.id == id);
+  Future<void> deleteNestItem(dynamic id) async {
+    final strId = id.toString();
+    _nestHistory.removeWhere((e) => e.id == strId);
     try {
-      final db = await DatabaseHelper.instance.database;
-      await db.delete('nest_history', where: 'id = ?', whereArgs: [id]);
+      await DatabaseHelper.instance.deleteById('nest_history', strId);
     } catch (e) {
       if (kDebugMode) print('Gagal menghapus item Nest dari SQLite: $e');
+    }
+  }
+
+  Future<void> deleteItem(dynamic id, dynamic type) async {
+    final typeStr = type.toString().toLowerCase();
+    if (typeStr.contains('gold')) {
+      await deleteGoldItem(id);
+    } else if (typeStr.contains('pivot')) {
+      await deletePivotItem(id);
+    } else if (typeStr.contains('nest')) {
+      await deleteNestItem(id);
     }
   }
 

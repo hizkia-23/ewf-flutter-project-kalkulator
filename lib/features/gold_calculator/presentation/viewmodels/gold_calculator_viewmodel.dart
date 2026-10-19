@@ -221,9 +221,11 @@ class GoldCalculatorViewModel extends ChangeNotifier {
     hargaBeli = '';
     hargaJual = '';
     modalAwalInput = '';
-    kursUsdIdrInput = '18000';
     modalAwal = 0;
-    kursUsdIdr = 18000;
+    kursUsdIdrInput = liveRate != null && liveRate! > 0
+        ? liveRate!.toStringAsFixed(0)
+        : '18000';
+    kursUsdIdr = liveRate != null && liveRate! > 0 ? liveRate! : 18000;
     hasil = null;
     errorMessage = null;
     isCalculating = false;

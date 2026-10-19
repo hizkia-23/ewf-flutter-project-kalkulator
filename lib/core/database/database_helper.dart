@@ -165,6 +165,22 @@ class DatabaseHelper {
     }
   }
 
+  /// Menghapus satu baris data dari tabel berdasarkan primary key [id]
+  Future<int> deleteById(String table, dynamic id) async {
+    final db = await database;
+    return await db.delete(table, where: 'id = ?', whereArgs: [id.toString()]);
+  }
+
+  /// Menghapus data dari tabel dengan klausa WHERE kustom
+  Future<int> delete(
+    String table, {
+    String? where,
+    List<Object?>? whereArgs,
+  }) async {
+    final db = await database;
+    return await db.delete(table, where: where, whereArgs: whereArgs);
+  }
+
   Future close() async {
     final db = await instance.database;
     db.close();
