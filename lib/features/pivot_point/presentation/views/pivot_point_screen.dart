@@ -57,6 +57,7 @@ class _PivotPointViewState extends State<_PivotPointView>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _viewModelRef = context.read<PivotPointViewModel>();
+      _viewModelRef?.reset();
       _viewModelRef?.addListener(_onViewModelUpdated);
     });
 
@@ -86,6 +87,11 @@ class _PivotPointViewState extends State<_PivotPointView>
   @override
   void dispose() {
     _viewModelRef?.removeListener(_onViewModelUpdated);
+    _viewModelRef?.reset();
+    highController.clear();
+    lowController.clear();
+    closeController.clear();
+    opController.clear();
     highController.dispose();
     lowController.dispose();
     closeController.dispose();

@@ -51,6 +51,7 @@ class _NestViewState extends State<_NestView>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _viewModelRef = context.read<NestViewModel>();
+      _viewModelRef?.reset();
       _viewModelRef?.addListener(_onViewModelUpdated);
     });
 
@@ -78,6 +79,9 @@ class _NestViewState extends State<_NestView>
   @override
   void dispose() {
     _viewModelRef?.removeListener(_onViewModelUpdated);
+    _viewModelRef?.reset();
+    closeController.clear();
+    opController.clear();
     closeController.dispose();
     opController.dispose();
     _tabController.dispose();

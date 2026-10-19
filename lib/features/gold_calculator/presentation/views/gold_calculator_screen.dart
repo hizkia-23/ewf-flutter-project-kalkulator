@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../viewmodels/gold_calculator_viewmodel.dart';
 import 'gold_calculator_input_view.dart';
 
 class GoldCalculatorScreen extends StatelessWidget {
@@ -7,6 +9,9 @@ class GoldCalculatorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const GoldCalculatorInputView();
+    return ChangeNotifierProvider(
+      create: (_) => GoldCalculatorViewModel(),
+      child: const GoldCalculatorInputView(),
+    );
   }
 }
