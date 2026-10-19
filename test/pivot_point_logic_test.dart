@@ -52,5 +52,22 @@ void main() {
 
       expect(result.recommendation, 'NEUTRAL');
     });
+
+    test('calculates pivot values correctly and returns "-" recommendation when OP is null', () {
+      final result = useCase.call(
+        high: 4150,
+        low: 4100,
+        close: 4130,
+      );
+
+      expect(result.pp, closeTo(4126.6666666667, 0.0001));
+      expect(result.range, 50);
+      expect(result.r1, closeTo(4153.3333333333, 0.0001));
+      expect(result.r2, closeTo(4176.6666666667, 0.0001));
+      expect(result.s1, closeTo(4103.3333333333, 0.0001));
+      expect(result.s2, closeTo(4076.6666666667, 0.0001));
+      expect(result.openingPrice, isNull);
+      expect(result.recommendation, '-');
+    });
   });
 }

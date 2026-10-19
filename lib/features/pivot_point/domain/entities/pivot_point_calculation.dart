@@ -3,7 +3,7 @@ class PivotPointCalculation {
     required this.high,
     required this.low,
     required this.close,
-    required this.openingPrice,
+    this.openingPrice,
     required this.pp,
     required this.range,
     required this.r1,
@@ -20,7 +20,7 @@ class PivotPointCalculation {
   final double high;
   final double low;
   final double close;
-  final double openingPrice;
+  final double? openingPrice;
   final double pp;
   final double range;
   final double r1;

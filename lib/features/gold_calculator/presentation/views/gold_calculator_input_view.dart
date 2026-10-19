@@ -70,7 +70,10 @@ class _GoldCalculatorInputViewState extends State<GoldCalculatorInputView> {
     } else {
       Navigator.of(context).pushNamed(
         AppRoutes.goldCalculatorResult,
-        arguments: viewModel.hasil,
+        arguments: {
+          ...viewModel.hasil!,
+          'viewModel': viewModel,
+        },
       );
     }
   }

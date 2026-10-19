@@ -8,6 +8,8 @@ import '../../data/datasources/newsmaker_api_service.dart'; // <-- IMPORT API SE
 import '../../../../core/database/database_helper.dart';
 import '../../data/datasources/pivot_point_local_data_source.dart';
 
+import '../../../../core/services/history_service.dart';
+
 /// ViewModel untuk Pivot Point Calculator.
 /// Bertugas memanggil UseCase, menyimpan hasil, dan mengelola loading state.
 class PivotPointViewModel extends ChangeNotifier {
@@ -28,6 +30,9 @@ class PivotPointViewModel extends ChangeNotifier {
   bool isManualMode = true;
   String symbol = 'XAU/USD';
   String lastUpdated = '';
+
+  // State Anti-Spam Simpan ke Riwayat
+  bool isSaved = false;
 
   // 1. Simpan instrumen yang sedang dipilih (Default: Gold)
   String _selectedNewsmakerSymbol = 'Gold';
@@ -180,7 +185,7 @@ class PivotPointViewModel extends ChangeNotifier {
     required double high,
     required double low,
     required double close,
-    required double openingPrice,
+    double? openingPrice,
   }) async {
     if (!_validateInputs(high, low, close, openingPrice)) {
       notifyListeners();
@@ -199,6 +204,7 @@ class PivotPointViewModel extends ChangeNotifier {
         openingPrice: openingPrice,
       );
       errorMessage = null;
+      isSaved = false;
     } catch (e) {
       errorMessage = 'Error dalam kalkulasi: $e';
       result = null;
@@ -234,6 +240,7 @@ class PivotPointViewModel extends ChangeNotifier {
         openingPrice: open,
       );
       errorMessage = null;
+      isSaved = false;
     } catch (e) {
       errorMessage = 'Error dalam kalkulasi: $e';
       result = null;
@@ -243,14 +250,54 @@ class PivotPointViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Simpan hasil kalkulasi Pivot Point ke HistoryService (SQLite & Memori)
+  Future<void> saveToHistory() async {
+    if (isSaved || result == null) return;
+    final data = result!;
+    final entry = PivotHistoryEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      high: data.high,
+      low: data.low,
+      close: data.close,
+      openingPrice: data.openingPrice,
+      pp: data.pp,
+      range: data.range,
+      r1: data.r1,
+      r2: data.r2,
+      r3: data.r3,
+      r4: data.r4,
+      s1: data.s1,
+      s2: data.s2,
+      s3: data.s3,
+      s4: data.s4,
+      recommendation: data.recommendation,
+    );
+    await HistoryService.instance.addPivot(entry);
+    isSaved = true;
+    notifyListeners();
+  }
+
+  /// Reset status tersimpan jika input diganti
+  void markUnsaved() {
+    if (isSaved) {
+      isSaved = false;
+      notifyListeners();
+    }
+  }
+
   bool _validateInputs(
     double high,
     double low,
     double close,
-    double openingPrice,
+    double? openingPrice,
   ) {
-    if (high <= 0 || low <= 0 || close <= 0 || openingPrice <= 0) {
-      errorMessage = 'Semua nilai harus berupa angka positif';
+    if (high <= 0 || low <= 0 || close <= 0) {
+      errorMessage = 'High, Low, dan Close harus berupa angka positif';
+      return false;
+    }
+    if (openingPrice != null && openingPrice <= 0) {
+      errorMessage = 'Harga Open harus berupa angka positif jika diisi';
       return false;
     }
     errorMessage = null;
@@ -260,6 +307,7 @@ class PivotPointViewModel extends ChangeNotifier {
   void resetResults() {
     result = null;
     errorMessage = null;
+    isSaved = false;
     notifyListeners();
   }
 
@@ -268,6 +316,7 @@ class PivotPointViewModel extends ChangeNotifier {
     lastUpdated = '';
     isLoading = false;
     isManualMode = true;
+    isSaved = false;
     resetResults();
   }
 

@@ -3,6 +3,7 @@ import 'package:kalkulator_pivot/features/pivot_point/domain/entities/market_dat
 import 'package:kalkulator_pivot/features/pivot_point/data/datasources/newsmaker_api_service.dart';
 import 'package:kalkulator_pivot/features/pivot_point/data/datasources/pivot_point_local_data_source.dart';
 import 'package:kalkulator_pivot/core/database/database_helper.dart';
+import '../../../../core/services/history_service.dart';
 
 // ── ENTITAS HASIL NEST ──
 class NestCalculation {
@@ -29,6 +30,9 @@ class NestViewModel extends ChangeNotifier {
   bool isManualMode = true;
   String symbol = 'XAU/USD';
   String lastUpdated = '';
+
+  // State Anti-Spam Simpan ke Riwayat
+  bool isSaved = false;
 
   String _selectedNewsmakerSymbol = 'Gold';
   String get selectedNewsmakerSymbol => _selectedNewsmakerSymbol;
@@ -188,6 +192,7 @@ class NestViewModel extends ChangeNotifier {
       );
 
       errorMessage = null;
+      isSaved = false;
     } catch (e) {
       errorMessage = 'Error dalam kalkulasi Nest: $e';
       result = null;
@@ -210,6 +215,30 @@ class NestViewModel extends ChangeNotifier {
     );
   }
 
+  /// Simpan hasil kalkulasi Nest ke HistoryService (SQLite & Memori)
+  Future<void> saveToHistory() async {
+    if (isSaved || result == null) return;
+    final data = result!;
+    final entry = NestHistoryEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      close: data.close,
+      openingPrice: data.openingPrice,
+      recommendation: data.recommendation,
+    );
+    await HistoryService.instance.addNest(entry);
+    isSaved = true;
+    notifyListeners();
+  }
+
+  /// Reset status tersimpan jika input diganti
+  void markUnsaved() {
+    if (isSaved) {
+      isSaved = false;
+      notifyListeners();
+    }
+  }
+
   bool _validateInputs(
     double close,
     double openingPrice,
@@ -225,6 +254,7 @@ class NestViewModel extends ChangeNotifier {
   void resetResults() {
     result = null;
     errorMessage = null;
+    isSaved = false;
     notifyListeners();
   }
 
@@ -233,6 +263,7 @@ class NestViewModel extends ChangeNotifier {
     lastUpdated = '';
     isLoading = false;
     isManualMode = true;
+    isSaved = false;
     resetResults();
   }
 

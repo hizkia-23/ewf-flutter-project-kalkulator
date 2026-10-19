@@ -5,7 +5,7 @@ class PivotPointCalculationModel extends PivotPointCalculation {
     required super.high,
     required super.low,
     required super.close,
-    required super.openingPrice,
+    super.openingPrice,
     required super.pp,
     required super.range,
     required super.r1,

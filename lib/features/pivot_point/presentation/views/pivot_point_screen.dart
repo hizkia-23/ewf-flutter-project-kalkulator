@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/services/history_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/number_formatter.dart';
@@ -50,6 +49,11 @@ class _PivotPointViewState extends State<_PivotPointView>
     closeController = TextEditingController();
     opController = TextEditingController();
     _mainScrollController = ScrollController();
+
+    highController.addListener(() => _viewModelRef?.markUnsaved());
+    lowController.addListener(() => _viewModelRef?.markUnsaved());
+    closeController.addListener(() => _viewModelRef?.markUnsaved());
+    opController.addListener(() => _viewModelRef?.markUnsaved());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _viewModelRef = context.read<PivotPointViewModel>();
@@ -117,7 +121,7 @@ class _PivotPointViewState extends State<_PivotPointView>
         high: parseDecimal(highController.text),
         low: parseDecimal(lowController.text),
         close: parseDecimal(closeController.text),
-        openingPrice: parseDecimal(opController.text),
+        openingPrice: parseDecimalNullable(opController.text),
       );
     }
 
@@ -136,29 +140,10 @@ class _PivotPointViewState extends State<_PivotPointView>
     }
   }
 
-  void _saveToHistory(PivotPointViewModel viewModel) {
-    final data = viewModel.result;
-    if (data == null) return;
-    final entry = PivotHistoryEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      timestamp: DateTime.now(),
-      high: data.high,
-      low: data.low,
-      close: data.close,
-      openingPrice: data.openingPrice,
-      pp: data.pp,
-      range: data.range,
-      r1: data.r1,
-      r2: data.r2,
-      r3: data.r3,
-      r4: data.r4,
-      s1: data.s1,
-      s2: data.s2,
-      s3: data.s3,
-      s4: data.s4,
-      recommendation: data.recommendation,
-    );
-    HistoryService.instance.addPivot(entry);
+  Future<void> _saveToHistory(PivotPointViewModel viewModel) async {
+    if (viewModel.isSaved || viewModel.result == null) return;
+    await viewModel.saveToHistory();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Hasil pivot berhasil disimpan ke riwayat'),
@@ -448,7 +433,7 @@ class _PivotPointViewState extends State<_PivotPointView>
         const SizedBox(height: 20),
         _inputField(
           context: context,
-          label: 'OPEN (OP)',
+          label: 'OPEN (OP) - Opsional',
           hint: '',
           controller: opController,
         ),
@@ -606,7 +591,7 @@ class _PivotPointViewState extends State<_PivotPointView>
         ),
         const SizedBox(height: 12),
 
-        if (viewModel.isManualMode) ...[
+        if (viewModel.isManualMode && rec != '-' && rec != 'N/A') ...[
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -739,23 +724,34 @@ class _PivotPointViewState extends State<_PivotPointView>
           width: double.infinity,
           height: 48,
           child: OutlinedButton(
-            onPressed: () => _saveToHistory(viewModel),
+            onPressed: viewModel.isSaved ? null : () => _saveToHistory(viewModel),
             style: OutlinedButton.styleFrom(
-              foregroundColor: context.textPrimary,
-              side: BorderSide(color: context.borderColor),
-              backgroundColor: context.cardBg,
+              foregroundColor: viewModel.isSaved ? const Color(0xFF16A34A) : context.textPrimary,
+              side: BorderSide(
+                color: viewModel.isSaved ? const Color(0xFF16A34A).withAlpha(120) : context.borderColor,
+              ),
+              backgroundColor: viewModel.isSaved
+                  ? (context.isDarkMode ? const Color(0xFF16A34A).withAlpha(35) : const Color(0xFFDCFCE7))
+                  : context.cardBg,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.bookmark_rounded, size: 18),
-                SizedBox(width: 8),
+                Icon(
+                  viewModel.isSaved ? Icons.check_circle_rounded : Icons.bookmark_outline_rounded,
+                  size: 18,
+                  color: viewModel.isSaved ? const Color(0xFF16A34A) : null,
+                ),
+                const SizedBox(width: 8),
                 Text(
-                  'Simpan ke Riwayat',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  viewModel.isSaved ? 'Tersimpan' : 'Simpan ke Riwayat',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: viewModel.isSaved ? const Color(0xFF16A34A) : null,
+                  ),
                 ),
               ],
             ),

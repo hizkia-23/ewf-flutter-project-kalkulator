@@ -1,10 +1,10 @@
 import 'package:flutter/services.dart';
 
-/// Parse angka format Indonesia maupun USD (2,700.50 → 2700.50 atau 4.150,50 → 4150.50)
-double parseDecimal(String value) {
-  if (value.trim().isEmpty) return 0;
+/// Parse angka format Indonesia maupun USD dengan return null jika kosong atau tidak valid
+double? parseDecimalNullable(String value) {
+  if (value.trim().isEmpty) return null;
   String cleaned = value.replaceAll('Rp', '').replaceAll('\$', '').replaceAll(' ', '').trim();
-  if (cleaned.isEmpty) return 0;
+  if (cleaned.isEmpty) return null;
 
   if (cleaned.contains(',') && cleaned.contains('.')) {
     final lastComma = cleaned.lastIndexOf(',');
@@ -28,7 +28,12 @@ double parseDecimal(String value) {
     }
   }
 
-  return double.tryParse(cleaned) ?? 0;
+  return double.tryParse(cleaned);
+}
+
+/// Parse angka format Indonesia maupun USD (2,700.50 → 2700.50 atau 4.150,50 → 4150.50)
+double parseDecimal(String value) {
+  return parseDecimalNullable(value) ?? 0;
 }
 
 /// Format angka ke format Indonesia (IDR): pemisah ribuan titik (.), desimal koma (,)

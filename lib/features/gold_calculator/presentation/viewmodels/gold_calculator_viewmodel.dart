@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../../core/services/api_service.dart';
+import '../../../../core/services/history_service.dart';
 import '../../../../core/utils/number_formatter.dart';
 
 /// ViewModel untuk Gold Calculator
 /// Mengelola semua business logic dan state untuk kalkulasi emas fisik
-class GoldCalculatorViewModel {
+class GoldCalculatorViewModel extends ChangeNotifier {
   final ApiService _apiService = ApiService();
 
   // Input values
@@ -20,6 +23,9 @@ class GoldCalculatorViewModel {
   // Live Exchange Rate State
   bool isFetchingRate = false;
   double? liveRate;
+
+  // Anti-Spam state
+  bool isSaved = false;
 
   /// Mengambil kurs USD/IDR secara live dari internet
   Future<double?> fetchLiveExchangeRate() async {
@@ -77,6 +83,11 @@ class GoldCalculatorViewModel {
 
     if (hb == null || hj == null || hb <= 0 || hj <= 0) {
       errorMessage = 'Harga Beli dan Harga Jual harus berupa angka positif';
+      return false;
+    }
+
+    if (modal == null || modal <= 0) {
+      errorMessage = 'Modal Awal harus berupa angka positif';
       return false;
     }
 
@@ -143,6 +154,38 @@ class GoldCalculatorViewModel {
     }
 
     isCalculating = false;
+    isSaved = false;
+    notifyListeners();
+  }
+
+  /// Simpan hasil kalkulasi ke HistoryService (SQLite & Memori)
+  Future<void> saveToHistory() async {
+    if (isSaved || hasil == null) return;
+    final entry = GoldHistoryEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      hb: (hasil!['hb'] as num).toDouble(),
+      hj: (hasil!['hj'] as num).toDouble(),
+      kurs: (hasil!['kurs'] as num).toDouble(),
+      toz: (hasil!['toz'] as num?)?.toDouble() ?? 31.1,
+      modalAwal: (hasil!['modalAwal'] as num).toDouble(),
+      hhb: (hasil!['hhb'] as num).toDouble(),
+      hhj: (hasil!['hhj'] as num).toDouble(),
+      selisih: (hasil!['selisih'] as num).toDouble(),
+      gramEmas: (hasil!['gramEmas'] as num).toDouble(),
+      keuntunganBersih: (hasil!['keuntunganBersih'] as num).toDouble(),
+    );
+    await HistoryService.instance.addGold(entry);
+    isSaved = true;
+    notifyListeners();
+  }
+
+  /// Menandai bahwa hasil saat ini belum disimpan (dipanggil jika input berubah)
+  void markUnsaved() {
+    if (isSaved) {
+      isSaved = false;
+      notifyListeners();
+    }
   }
 
   /// Format rupiah tanpa pecahan desimal.
@@ -184,6 +227,8 @@ class GoldCalculatorViewModel {
     hasil = null;
     errorMessage = null;
     isCalculating = false;
+    isSaved = false;
+    notifyListeners();
   }
 
   /// Update modal awal

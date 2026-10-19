@@ -18,7 +18,12 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
+    );
   }
 
   // Mengeksekusi DDL (Data Definition Language) untuk membuat tabel
@@ -31,7 +36,7 @@ class DatabaseHelper {
         high REAL NOT NULL,
         low REAL NOT NULL,
         close REAL NOT NULL,
-        openingPrice REAL NOT NULL,
+        openingPrice REAL,
         pp REAL NOT NULL,
         range REAL NOT NULL,
         r1 REAL NOT NULL,
@@ -59,16 +64,21 @@ class DatabaseHelper {
       )
     ''');
 
-    // 3. Tabel Riwayat Emas Fisik (Baru!)
+    // 3. Tabel Riwayat Emas Fisik Kalkulator
     await db.execute('''
-      CREATE TABLE physical_gold_history (
+      CREATE TABLE gold_history (
         id TEXT PRIMARY KEY,
         timestamp TEXT NOT NULL,
-        gold_type TEXT NOT NULL,    -- Contoh: Antam, UBS, Perhiasan
-        weight REAL NOT NULL,       -- Berat dalam gram
-        purity REAL NOT NULL,       -- Kadar/Karat (misal: 24, 22, atau 99.9)
-        price_per_gram REAL NOT NULL,
-        total_price REAL NOT NULL
+        hb REAL NOT NULL,
+        hj REAL NOT NULL,
+        kurs REAL NOT NULL,
+        toz REAL NOT NULL,
+        modalAwal REAL NOT NULL,
+        hhb REAL NOT NULL,
+        hhj REAL NOT NULL,
+        selisih REAL NOT NULL,
+        gramEmas REAL NOT NULL,
+        keuntunganBersih REAL NOT NULL
       )
     ''');
 
@@ -86,7 +96,7 @@ class DatabaseHelper {
       'setting_value': 'light'
     });
 
-    // 5. Tabel Riwayat Nest (High dan Low dihapus)
+    // 5. Tabel Riwayat Nest
     await db.execute('''
       CREATE TABLE nest_history (
         id TEXT PRIMARY KEY,
@@ -96,6 +106,63 @@ class DatabaseHelper {
         recommendation TEXT NOT NULL
       )
     ''');
+  }
+
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // 1. Buat tabel gold_history jika belum ada
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS gold_history (
+          id TEXT PRIMARY KEY,
+          timestamp TEXT NOT NULL,
+          hb REAL NOT NULL,
+          hj REAL NOT NULL,
+          kurs REAL NOT NULL,
+          toz REAL NOT NULL,
+          modalAwal REAL NOT NULL,
+          hhb REAL NOT NULL,
+          hhj REAL NOT NULL,
+          selisih REAL NOT NULL,
+          gramEmas REAL NOT NULL,
+          keuntunganBersih REAL NOT NULL
+        )
+      ''');
+
+      // 2. Re-create pivot_history agar kolom openingPrice nullable
+      await db.execute('DROP TABLE IF EXISTS pivot_history');
+      await db.execute('''
+        CREATE TABLE pivot_history (
+          id TEXT PRIMARY KEY,
+          timestamp TEXT NOT NULL,
+          high REAL NOT NULL,
+          low REAL NOT NULL,
+          close REAL NOT NULL,
+          openingPrice REAL,
+          pp REAL NOT NULL,
+          range REAL NOT NULL,
+          r1 REAL NOT NULL,
+          r2 REAL NOT NULL,
+          r3 REAL NOT NULL,
+          r4 REAL NOT NULL,
+          s1 REAL NOT NULL,
+          s2 REAL NOT NULL,
+          s3 REAL NOT NULL,
+          s4 REAL NOT NULL,
+          recommendation TEXT NOT NULL
+        )
+      ''');
+
+      // 3. Buat tabel nest_history jika belum ada
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS nest_history (
+          id TEXT PRIMARY KEY,
+          timestamp TEXT NOT NULL,
+          close REAL NOT NULL,
+          openingPrice REAL NOT NULL,
+          recommendation TEXT NOT NULL
+        )
+      ''');
+    }
   }
 
   Future close() async {

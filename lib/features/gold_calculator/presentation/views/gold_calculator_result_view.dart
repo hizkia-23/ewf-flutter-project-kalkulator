@@ -4,9 +4,18 @@ import '../../../../core/routes/app_routes.dart';
 import '../../../../core/services/history_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../viewmodels/gold_calculator_viewmodel.dart';
 
-class GoldCalculatorResultView extends StatelessWidget {
+class GoldCalculatorResultView extends StatefulWidget {
   const GoldCalculatorResultView({super.key});
+
+  @override
+  State<GoldCalculatorResultView> createState() =>
+      _GoldCalculatorResultViewState();
+}
+
+class _GoldCalculatorResultViewState extends State<GoldCalculatorResultView> {
+  bool _isSaved = false;
 
   String _formatCurrency(double value) {
     if (value.isNaN || value.isInfinite) return 'Rp0';
@@ -52,6 +61,9 @@ class GoldCalculatorResultView extends StatelessWidget {
         ),
       );
     }
+
+    final vm = arguments['viewModel'] as GoldCalculatorViewModel?;
+    final isSaved = _isSaved || (vm?.isSaved ?? false);
 
     final hb = (arguments['hb'] as num?)?.toDouble() ?? 0.0;
     final hj = (arguments['hj'] as num?)?.toDouble() ?? 0.0;
@@ -250,34 +262,55 @@ class GoldCalculatorResultView extends StatelessWidget {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () => _saveToHistory(context, {
-                          'hb': hb,
-                          'hj': hj,
-                          'kurs': kurs,
-                          'toz': 31.1,
-                          'modalAwal': modalAwal,
-                          'hhb': hhb,
-                          'hhj': hhj,
-                          'selisih': selisih,
-                          'gramEmas': gramEmas,
-                          'keuntunganBersih': keuntunganBersih,
-                        }),
+                        onPressed: isSaved
+                            ? null
+                            : () => _saveToHistory(arguments, vm),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: context.isDarkMode ? AppColors.primary : const Color(0xFF0F172A),
-                          foregroundColor: Colors.white,
+                          backgroundColor: isSaved
+                              ? (context.isDarkMode
+                                  ? const Color(0xFF16A34A).withAlpha(40)
+                                  : const Color(0xFFDCFCE7))
+                              : (context.isDarkMode
+                                  ? AppColors.primary
+                                  : const Color(0xFF0F172A)),
+                          foregroundColor:
+                              isSaved ? const Color(0xFF16A34A) : Colors.white,
+                          disabledBackgroundColor: context.isDarkMode
+                              ? const Color(0xFF16A34A).withAlpha(35)
+                              : const Color(0xFFDCFCE7),
+                          disabledForegroundColor: const Color(0xFF16A34A),
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
+                            side: isSaved
+                                ? const BorderSide(
+                                    color: Color(0xFF16A34A),
+                                    width: 1.5,
+                                  )
+                                : BorderSide.none,
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.bookmark_rounded, size: 18),
-                            SizedBox(width: 8),
+                            Icon(
+                              isSaved
+                                  ? Icons.check_circle_rounded
+                                  : Icons.bookmark_outline_rounded,
+                              size: 18,
+                              color: isSaved
+                                  ? const Color(0xFF16A34A)
+                                  : Colors.white,
+                            ),
+                            const SizedBox(width: 8),
                             Text(
-                              'Simpan ke Riwayat',
-                              style: TextStyle(fontWeight: FontWeight.w700),
+                              isSaved ? 'Tersimpan' : 'Simpan ke Riwayat',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: isSaved
+                                    ? const Color(0xFF16A34A)
+                                    : Colors.white,
+                              ),
                             ),
                           ],
                         ),
@@ -355,22 +388,37 @@ class GoldCalculatorResultView extends StatelessWidget {
     );
   }
 
-  void _saveToHistory(BuildContext context, Map<String, dynamic> data) {
-    final entry = GoldHistoryEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      timestamp: DateTime.now(),
-      hb: data['hb'],
-      hj: data['hj'],
-      kurs: data['kurs'],
-      toz: data['toz'],
-      modalAwal: data['modalAwal'],
-      hhb: data['hhb'],
-      hhj: data['hhj'],
-      selisih: data['selisih'],
-      gramEmas: data['gramEmas'],
-      keuntunganBersih: data['keuntunganBersih'],
-    );
-    HistoryService.instance.addGold(entry);
+  Future<void> _saveToHistory(
+    Map<String, dynamic> data,
+    GoldCalculatorViewModel? viewModel,
+  ) async {
+    if (_isSaved || (viewModel?.isSaved ?? false)) return;
+
+    if (viewModel != null) {
+      await viewModel.saveToHistory();
+    } else {
+      final entry = GoldHistoryEntry(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        timestamp: DateTime.now(),
+        hb: (data['hb'] as num).toDouble(),
+        hj: (data['hj'] as num).toDouble(),
+        kurs: (data['kurs'] as num).toDouble(),
+        toz: (data['toz'] as num?)?.toDouble() ?? 31.1,
+        modalAwal: (data['modalAwal'] as num).toDouble(),
+        hhb: (data['hhb'] as num).toDouble(),
+        hhj: (data['hhj'] as num).toDouble(),
+        selisih: (data['selisih'] as num).toDouble(),
+        gramEmas: (data['gramEmas'] as num).toDouble(),
+        keuntunganBersih: (data['keuntunganBersih'] as num).toDouble(),
+      );
+      await HistoryService.instance.addGold(entry);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isSaved = true;
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Perhitungan berhasil disimpan ke riwayat'),

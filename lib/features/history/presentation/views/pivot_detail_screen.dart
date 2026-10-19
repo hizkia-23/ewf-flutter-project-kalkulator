@@ -103,7 +103,13 @@ class PivotDetailScreen extends StatelessWidget {
                           _divider(context),
                           _detailRow(context, 'Close', entry.close.toStringAsFixed(2)),
                           _divider(context),
-                          _detailRow(context, 'Open (OP)', entry.openingPrice.toStringAsFixed(2)),
+                          _detailRow(
+                            context,
+                            'Open (OP)',
+                            entry.openingPrice != null
+                                ? entry.openingPrice!.toStringAsFixed(2)
+                                : '-',
+                          ),
                         ],
                       ),
                     ),

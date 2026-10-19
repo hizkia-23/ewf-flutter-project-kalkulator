@@ -17,7 +17,7 @@ class CalculatePivotPoint {
     required double high,
     required double low,
     required double close,
-    required double openingPrice,
+    double? openingPrice,
   }) {
     final pp = (high + low + close) / 3;
     final range = high - low;
@@ -33,7 +33,9 @@ class CalculatePivotPoint {
     final s4 = pp - (3 * range);
 
     String recommendation;
-    if (pp > openingPrice) {
+    if (openingPrice == null) {
+      recommendation = '-';
+    } else if (pp > openingPrice) {
       recommendation = 'BUY';
     } else if (pp < openingPrice) {
       recommendation = 'SELL';
