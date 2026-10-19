@@ -6,7 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart'; // <-- Pastikan import ini ditambahkan
 import '../../../dashboard/domain/entities/news_item.dart';
 import '../../../dashboard/presentation/widgets/news_detail_bottom_sheet.dart';
-import '../viewmodels/news_viewmodel.dart'; 
+import '../viewmodels/news_viewmodel.dart';
 
 class AllNewsScreen extends StatefulWidget {
   const AllNewsScreen({super.key});
@@ -16,7 +16,6 @@ class AllNewsScreen extends StatefulWidget {
 }
 
 class _AllNewsScreenState extends State<AllNewsScreen> {
-  
   @override
   void initState() {
     super.initState();
@@ -33,7 +32,11 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
         elevation: 0,
         backgroundColor: context.scaffoldBg,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPrimary, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: context.textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -58,13 +61,21 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.wifi_off_rounded, size: 48, color: context.textSecondary),
+                  Icon(
+                    Icons.wifi_off_rounded,
+                    size: 48,
+                    color: context.textSecondary,
+                  ),
                   const SizedBox(height: 16),
-                  Text(viewModel.errorMessage!, style: TextStyle(color: context.textSecondary)),
+                  // TAMBAHKAN REPLACE ALL DI SINI 👇
+                  Text(
+                    viewModel.errorMessage!.replaceAll('Exception: ', ''),
+                    style: TextStyle(color: context.textSecondary),
+                  ),
                   TextButton(
                     onPressed: () => viewModel.fetchLiveNews(),
                     child: const Text('Coba Lagi'),
-                  )
+                  ),
                 ],
               ),
             );
@@ -122,7 +133,10 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, _, _) => Container(
                                   color: context.chipBg,
-                                  child: Icon(Icons.article_rounded, color: context.textSecondary),
+                                  child: Icon(
+                                    Icons.article_rounded,
+                                    color: context.textSecondary,
+                                  ),
                                 ),
                               ),
                             ),
@@ -133,7 +147,8 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       item.category,
