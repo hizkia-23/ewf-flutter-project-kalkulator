@@ -20,6 +20,14 @@ class HistoryViewModel extends ChangeNotifier {
 
   /// Memuat data dari HistoryService ke state lokal
   void loadData() {
+    if (!_historyService.isLoaded) {
+      _historyService.loadHistory().then((_) {
+        _goldHistoryList = List.from(_historyService.goldHistory);
+        _pivotHistoryList = List.from(_historyService.pivotHistory);
+        _nestHistoryList = List.from(_historyService.nestHistory);
+        notifyListeners();
+      });
+    }
     _goldHistoryList = List.from(_historyService.goldHistory);
     _pivotHistoryList = List.from(_historyService.pivotHistory);
     _nestHistoryList = List.from(_historyService.nestHistory);

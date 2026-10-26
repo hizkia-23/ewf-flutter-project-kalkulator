@@ -9,11 +9,15 @@ class NewsmakerApiService {
     String categoryName,
   ) async {
     try {
-      final response = await http.get(Uri.parse(_url));
+      final uri = Uri.parse(_url).replace(queryParameters: {
+        'category': categoryName.trim(),
+      });
+      final response = await http.get(uri);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        final List<dynamic> allData = jsonResponse['data'];
+        final List<dynamic> allData =
+            jsonResponse['data'] as List<dynamic>? ?? [];
 
         // Menggunakan batas waktu yang lebih toleran (5 tahun)
         // agar data tetap muncul jika API belum di-update
@@ -22,10 +26,16 @@ class NewsmakerApiService {
         );
 
         final filteredList = allData.where((item) {
-          // 1. Filter nama kategori
+          // 1. Filter nama kategori jika field category ada
           final String itemCat = item['category']?.toString().trim() ?? '';
           final String targetCat = categoryName.trim();
-          if (itemCat != targetCat) return false;
+          if (itemCat.isNotEmpty &&
+              itemCat.toLowerCase() != targetCat.toLowerCase()) {
+            return false;
+          }
+
+          // Abaikan hari libur perbankan / pasar tanpa harga
+          if (item['isBankHoliday'] == true) return false;
 
           // 2. Filter tanggal
           final String itemDateStr = item['tanggal']?.toString() ?? '';
@@ -47,7 +57,7 @@ class NewsmakerApiService {
           }
         }).toList();
 
-        // Ambil maksimal 100 data terbaru agar UI (Tabel) tidak berat
+        // Ambil maksimal 100 data terbaru (API mengembalikan urutan ASC, reversed menempatkan yang terbaru di awal)
         final limitedList = filteredList.reversed.take(100).toList();
 
         // Mapping ke model MarketData
@@ -55,10 +65,10 @@ class NewsmakerApiService {
             .map(
               (item) => MarketData(
                 date: item['tanggal'].toString(),
-                open: double.tryParse(item['open'].toString()) ?? 0.0,
-                high: double.tryParse(item['high'].toString()) ?? 0.0,
-                low: double.tryParse(item['low'].toString()) ?? 0.0,
-                close: double.tryParse(item['close'].toString()) ?? 0.0,
+                open: double.tryParse(item['open']?.toString() ?? '') ?? 0.0,
+                high: double.tryParse(item['high']?.toString() ?? '') ?? 0.0,
+                low: double.tryParse(item['low']?.toString() ?? '') ?? 0.0,
+                close: double.tryParse(item['close']?.toString() ?? '') ?? 0.0,
               ),
             )
             .toList();

@@ -51,18 +51,20 @@ class GoldHistoryEntry {
 
   factory GoldHistoryEntry.fromMap(Map<String, dynamic> map) {
     return GoldHistoryEntry(
-      id: map['id'] as String,
-      timestamp: DateTime.parse(map['timestamp'] as String),
-      hb: (map['hb'] as num).toDouble(),
-      hj: (map['hj'] as num).toDouble(),
-      kurs: (map['kurs'] as num).toDouble(),
-      toz: (map['toz'] as num).toDouble(),
-      modalAwal: (map['modalAwal'] as num).toDouble(),
-      hhb: (map['hhb'] as num).toDouble(),
-      hhj: (map['hhj'] as num).toDouble(),
-      selisih: (map['selisih'] as num).toDouble(),
-      gramEmas: (map['gramEmas'] as num).toDouble(),
-      keuntunganBersih: (map['keuntunganBersih'] as num).toDouble(),
+      id: map['id']?.toString() ?? '',
+      timestamp: map['timestamp'] != null
+          ? (DateTime.tryParse(map['timestamp'].toString()) ?? DateTime.now())
+          : DateTime.now(),
+      hb: (map['hb'] as num?)?.toDouble() ?? 0.0,
+      hj: (map['hj'] as num?)?.toDouble() ?? 0.0,
+      kurs: (map['kurs'] as num?)?.toDouble() ?? 0.0,
+      toz: (map['toz'] as num?)?.toDouble() ?? 31.1,
+      modalAwal: (map['modalAwal'] as num?)?.toDouble() ?? 0.0,
+      hhb: (map['hhb'] as num?)?.toDouble() ?? 0.0,
+      hhj: (map['hhj'] as num?)?.toDouble() ?? 0.0,
+      selisih: (map['selisih'] as num?)?.toDouble() ?? 0.0,
+      gramEmas: (map['gramEmas'] as num?)?.toDouble() ?? 0.0,
+      keuntunganBersih: (map['keuntunganBersih'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -130,25 +132,25 @@ class PivotHistoryEntry {
 
   factory PivotHistoryEntry.fromMap(Map<String, dynamic> map) {
     return PivotHistoryEntry(
-      id: map['id'] as String,
-      timestamp: DateTime.parse(map['timestamp'] as String),
-      high: (map['high'] as num).toDouble(),
-      low: (map['low'] as num).toDouble(),
-      close: (map['close'] as num).toDouble(),
-      openingPrice: map['openingPrice'] != null
-          ? (map['openingPrice'] as num).toDouble()
-          : null,
-      pp: (map['pp'] as num).toDouble(),
-      range: (map['range'] as num).toDouble(),
-      r1: (map['r1'] as num).toDouble(),
-      r2: (map['r2'] as num).toDouble(),
-      r3: (map['r3'] as num).toDouble(),
-      r4: (map['r4'] as num).toDouble(),
-      s1: (map['s1'] as num).toDouble(),
-      s2: (map['s2'] as num).toDouble(),
-      s3: (map['s3'] as num).toDouble(),
-      s4: (map['s4'] as num).toDouble(),
-      recommendation: map['recommendation'] as String,
+      id: map['id']?.toString() ?? '',
+      timestamp: map['timestamp'] != null
+          ? (DateTime.tryParse(map['timestamp'].toString()) ?? DateTime.now())
+          : DateTime.now(),
+      high: (map['high'] as num?)?.toDouble() ?? 0.0,
+      low: (map['low'] as num?)?.toDouble() ?? 0.0,
+      close: (map['close'] as num?)?.toDouble() ?? 0.0,
+      openingPrice: (map['openingPrice'] as num?)?.toDouble(),
+      pp: (map['pp'] as num?)?.toDouble() ?? 0.0,
+      range: (map['range'] as num?)?.toDouble() ?? 0.0,
+      r1: (map['r1'] as num?)?.toDouble() ?? 0.0,
+      r2: (map['r2'] as num?)?.toDouble() ?? 0.0,
+      r3: (map['r3'] as num?)?.toDouble() ?? 0.0,
+      r4: (map['r4'] as num?)?.toDouble() ?? 0.0,
+      s1: (map['s1'] as num?)?.toDouble() ?? 0.0,
+      s2: (map['s2'] as num?)?.toDouble() ?? 0.0,
+      s3: (map['s3'] as num?)?.toDouble() ?? 0.0,
+      s4: (map['s4'] as num?)?.toDouble() ?? 0.0,
+      recommendation: map['recommendation']?.toString() ?? '',
     );
   }
 }
@@ -180,19 +182,19 @@ class NestHistoryEntry {
 
   factory NestHistoryEntry.fromMap(Map<String, dynamic> map) {
     return NestHistoryEntry(
-      id: map['id'] as String,
-      timestamp: DateTime.parse(map['timestamp'] as String),
-      close: (map['close'] as num).toDouble(),
-      openingPrice: (map['openingPrice'] as num).toDouble(),
-      recommendation: map['recommendation'] as String,
+      id: map['id']?.toString() ?? '',
+      timestamp: map['timestamp'] != null
+          ? (DateTime.tryParse(map['timestamp'].toString()) ?? DateTime.now())
+          : DateTime.now(),
+      close: (map['close'] as num?)?.toDouble() ?? 0.0,
+      openingPrice: (map['openingPrice'] as num?)?.toDouble() ?? 0.0,
+      recommendation: map['recommendation']?.toString() ?? '',
     );
   }
 }
 
 class HistoryService {
-  HistoryService._() {
-    loadHistory();
-  }
+  HistoryService._();
   static final HistoryService instance = HistoryService._();
 
   final List<GoldHistoryEntry> _goldHistory = [];
@@ -202,6 +204,8 @@ class HistoryService {
   bool _isLoaded = false;
   bool get isLoaded => _isLoaded;
 
+  Future<void>? _loadingFuture;
+
   List<GoldHistoryEntry> get goldHistory =>
       List.unmodifiable(_goldHistory.reversed.toList());
   List<PivotHistoryEntry> get pivotHistory =>
@@ -210,24 +214,45 @@ class HistoryService {
       List.unmodifiable(_nestHistory.reversed.toList());
 
   /// Memuat semua riwayat dari database SQLite ke dalam memori
-  Future<void> loadHistory() async {
+  Future<void> loadHistory() {
+    if (_loadingFuture != null) return _loadingFuture!;
+    _loadingFuture = _performLoadHistory();
+    return _loadingFuture!;
+  }
+
+  Future<void> _performLoadHistory() async {
     try {
       final db = await DatabaseHelper.instance.database;
 
       final goldMaps = await db.query('gold_history', orderBy: 'timestamp ASC');
-      _goldHistory
-        ..clear()
-        ..addAll(goldMaps.map(GoldHistoryEntry.fromMap));
+      _goldHistory.clear();
+      for (final map in goldMaps) {
+        try {
+          _goldHistory.add(GoldHistoryEntry.fromMap(map));
+        } catch (e) {
+          if (kDebugMode) print('Error parsing gold item: $e');
+        }
+      }
 
       final pivotMaps = await db.query('pivot_history', orderBy: 'timestamp ASC');
-      _pivotHistory
-        ..clear()
-        ..addAll(pivotMaps.map(PivotHistoryEntry.fromMap));
+      _pivotHistory.clear();
+      for (final map in pivotMaps) {
+        try {
+          _pivotHistory.add(PivotHistoryEntry.fromMap(map));
+        } catch (e) {
+          if (kDebugMode) print('Error parsing pivot item: $e');
+        }
+      }
 
       final nestMaps = await db.query('nest_history', orderBy: 'timestamp ASC');
-      _nestHistory
-        ..clear()
-        ..addAll(nestMaps.map(NestHistoryEntry.fromMap));
+      _nestHistory.clear();
+      for (final map in nestMaps) {
+        try {
+          _nestHistory.add(NestHistoryEntry.fromMap(map));
+        } catch (e) {
+          if (kDebugMode) print('Error parsing nest item: $e');
+        }
+      }
 
       _isLoaded = true;
       if (kDebugMode) {
@@ -237,6 +262,8 @@ class HistoryService {
       }
     } catch (e) {
       if (kDebugMode) print('Gagal memuat riwayat dari SQLite: $e');
+    } finally {
+      _loadingFuture = null;
     }
   }
 
@@ -272,31 +299,42 @@ class HistoryService {
 
   // ── Individual delete methods ──────────────────────────────────────────────
 
+  String _extractId(dynamic id) {
+    if (id is GoldHistoryEntry) return id.id;
+    if (id is PivotHistoryEntry) return id.id;
+    if (id is NestHistoryEntry) return id.id;
+    if (id is Map && id['id'] != null) return id['id'].toString();
+    return id.toString();
+  }
+
   Future<void> deleteGoldItem(dynamic id) async {
-    final strId = id.toString();
+    final strId = _extractId(id);
     _goldHistory.removeWhere((e) => e.id == strId);
     try {
-      await DatabaseHelper.instance.deleteById('gold_history', strId);
+      final db = await DatabaseHelper.instance.database;
+      await db.delete('gold_history', where: 'id = ?', whereArgs: [strId]);
     } catch (e) {
       if (kDebugMode) print('Gagal menghapus item Emas dari SQLite: $e');
     }
   }
 
   Future<void> deletePivotItem(dynamic id) async {
-    final strId = id.toString();
+    final strId = _extractId(id);
     _pivotHistory.removeWhere((e) => e.id == strId);
     try {
-      await DatabaseHelper.instance.deleteById('pivot_history', strId);
+      final db = await DatabaseHelper.instance.database;
+      await db.delete('pivot_history', where: 'id = ?', whereArgs: [strId]);
     } catch (e) {
       if (kDebugMode) print('Gagal menghapus item Pivot dari SQLite: $e');
     }
   }
 
   Future<void> deleteNestItem(dynamic id) async {
-    final strId = id.toString();
+    final strId = _extractId(id);
     _nestHistory.removeWhere((e) => e.id == strId);
     try {
-      await DatabaseHelper.instance.deleteById('nest_history', strId);
+      final db = await DatabaseHelper.instance.database;
+      await db.delete('nest_history', where: 'id = ?', whereArgs: [strId]);
     } catch (e) {
       if (kDebugMode) print('Gagal menghapus item Nest dari SQLite: $e');
     }

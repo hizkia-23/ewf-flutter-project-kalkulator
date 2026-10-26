@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/routes/app_routes.dart';
 import '../../../../core/services/history_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -316,48 +315,7 @@ class _GoldCalculatorResultViewState extends State<GoldCalculatorResultView> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: context.textPrimary,
-                              side: BorderSide(color: context.borderColor),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              backgroundColor: context.cardBg,
-                            ),
-                            child: const Text(
-                              'Hitung Ulang',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(
-                              context,
-                            ).pushReplacementNamed(AppRoutes.goldCalculator),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: context.textPrimary,
-                              side: BorderSide(color: context.borderColor),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              backgroundColor: context.cardBg,
-                            ),
-                            child: const Text(
-                              'Reset',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+
 
                     const SizedBox(height: 16),
                     Container(
