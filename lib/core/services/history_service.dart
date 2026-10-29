@@ -213,9 +213,12 @@ class HistoryService {
   List<NestHistoryEntry> get nestHistory =>
       List.unmodifiable(_nestHistory.reversed.toList());
 
-  /// Memuat semua riwayat dari database SQLite ke dalam memori
-  Future<void> loadHistory() {
-    if (_loadingFuture != null) return _loadingFuture!;
+  /// Memuat semua riwayat dari database SQLite ke dalam memori.
+  /// PERBAIKAN: Bisa dipanggil ulang dengan [forceReload] = true
+  /// untuk memuat data terbaru dari database (misalnya setelah insert baru).
+  Future<void> loadHistory({bool forceReload = false}) {
+    // Jika sedang loading dan bukan force reload, tunggu yang sedang berjalan
+    if (_loadingFuture != null && !forceReload) return _loadingFuture!;
     _loadingFuture = _performLoadHistory();
     return _loadingFuture!;
   }

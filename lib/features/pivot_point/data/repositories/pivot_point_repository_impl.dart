@@ -12,12 +12,6 @@ class PivotPointRepositoryImpl implements PivotPointRepository {
   Future<MarketData> fetchMarketData(String targetUrl) async {
     final data = await _scrapingService.fetchHistoricalPrices(targetUrl);
 
-    return MarketData(
-      date: data['date'] as String,
-      open: data['open'] as double,
-      high: data['high'] as double,
-      low: data['low'] as double,
-      close: data['close'] as double,
-    );
+    return MarketData.fromMap(data);
   }
 }

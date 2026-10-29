@@ -27,6 +27,7 @@ class PivotPointViewModel extends ChangeNotifier {
   PivotPointCalculation? result;
   String? errorMessage;
   bool isLoading = false;
+  bool isHistoryLoading = true;
   bool isManualMode = true;
   String symbol = 'XAU/USD';
   String lastUpdated = '';
@@ -70,6 +71,9 @@ class PivotPointViewModel extends ChangeNotifier {
 
   // ── FUNGSI MENARIK DATA (CACHE-THEN-NETWORK DENGAN PAGINATION) ──
   Future<void> _initData() async {
+    isHistoryLoading = true;
+    notifyListeners();
+
     try {
       if (kDebugMode) print('--- FASE 1: MEMUAT CACHE SQLITE (INSTAN) ---');
 
@@ -105,7 +109,8 @@ class PivotPointViewModel extends ChangeNotifier {
         'Nikkei': nikkeiPage,
       };
 
-      // BERITAHU UI SEKARANG! Tabel akan langsung terisi dalam 0.1 detik
+      // Matikan loading cache SQLite
+      isHistoryLoading = false;
       notifyListeners();
 
       // =================================================================
@@ -155,21 +160,22 @@ class PivotPointViewModel extends ChangeNotifier {
             'Nikkei': freshNikkeiPage,
           };
 
-          // BERITAHU UI SEKALI LAGI! Angka di tabel otomatis berkedip menjadi harga hari ini.
+          // BERITAHU UI SEKALI LAGI!
           notifyListeners();
-          if (kDebugMode)
-            print(
-              '--- SINKRONISASI API SUKSES, UI DIPERBARUI SECARA DIAM-DIAM ---',
-            );
+          if (kDebugMode) {
+            print('--- SINKRONISASI API SUKSES, UI DIPERBARUI SECARA DIAM-DIAM ---');
+          }
         }
       } catch (e) {
-        if (kDebugMode)
-          print('!!! API Gagal/Offline. Tetap aman pakai data cache !!!');
+        if (kDebugMode) {
+          print('!!! API Gagal/Offline. Tetap aman pakai data cache: $e !!!');
+        }
       }
-    } catch (e, stacktrace) {
+    } catch (e) {
+      isHistoryLoading = false;
+      notifyListeners();
       if (kDebugMode) {
-        print('!!! KESALAHAN FATAL PADA INIT DATA !!!');
-        print('Error Detail: $e');
+        print('!!! KESALAHAN FATAL PADA INIT DATA: $e !!!');
       }
     }
   }

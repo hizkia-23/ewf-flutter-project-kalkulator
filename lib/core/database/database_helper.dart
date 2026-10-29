@@ -5,12 +5,14 @@ import 'package:path/path.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+  static Future<Database>? _initFuture;
 
   DatabaseHelper._init();
 
   Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDB('pivot_kalkulator.db');
+    if (_database != null && _database!.isOpen) return _database!;
+    _initFuture ??= _initDB('pivot_kalkulator.db');
+    _database = await _initFuture!;
     return _database!;
   }
 
@@ -20,7 +22,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -160,6 +162,85 @@ class DatabaseHelper {
           close REAL NOT NULL,
           openingPrice REAL NOT NULL,
           recommendation TEXT NOT NULL
+        )
+      ''');
+
+      // 4. Buat tabel market_data jika belum ada
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS market_data (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          symbol TEXT NOT NULL,
+          date TEXT NOT NULL,
+          open REAL NOT NULL,
+          high REAL NOT NULL,
+          low REAL NOT NULL,
+          close REAL NOT NULL
+        )
+      ''');
+    }
+
+    // PERBAIKAN: Jaring pengaman untuk perangkat yang sudah di versi 2
+    // tapi tabel pivot_history / nest_history belum ada atau rusak.
+    // Menggunakan CREATE TABLE IF NOT EXISTS agar aman dan tidak menghapus data.
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS pivot_history (
+          id TEXT PRIMARY KEY,
+          timestamp TEXT NOT NULL,
+          high REAL NOT NULL,
+          low REAL NOT NULL,
+          close REAL NOT NULL,
+          openingPrice REAL,
+          pp REAL NOT NULL,
+          range REAL NOT NULL,
+          r1 REAL NOT NULL,
+          r2 REAL NOT NULL,
+          r3 REAL NOT NULL,
+          r4 REAL NOT NULL,
+          s1 REAL NOT NULL,
+          s2 REAL NOT NULL,
+          s3 REAL NOT NULL,
+          s4 REAL NOT NULL,
+          recommendation TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS nest_history (
+          id TEXT PRIMARY KEY,
+          timestamp TEXT NOT NULL,
+          close REAL NOT NULL,
+          openingPrice REAL NOT NULL,
+          recommendation TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS gold_history (
+          id TEXT PRIMARY KEY,
+          timestamp TEXT NOT NULL,
+          hb REAL NOT NULL,
+          hj REAL NOT NULL,
+          kurs REAL NOT NULL,
+          toz REAL NOT NULL,
+          modalAwal REAL NOT NULL,
+          hhb REAL NOT NULL,
+          hhj REAL NOT NULL,
+          selisih REAL NOT NULL,
+          gramEmas REAL NOT NULL,
+          keuntunganBersih REAL NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS market_data (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          symbol TEXT NOT NULL,
+          date TEXT NOT NULL,
+          open REAL NOT NULL,
+          high REAL NOT NULL,
+          low REAL NOT NULL,
+          close REAL NOT NULL
         )
       ''');
     }

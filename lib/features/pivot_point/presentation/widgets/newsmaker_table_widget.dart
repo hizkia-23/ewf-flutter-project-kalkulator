@@ -132,7 +132,28 @@ class _NewsmakerTableWidgetState extends State<NewsmakerTableWidget> {
         const SizedBox(height: 16),
 
         // ── TABEL DATA HISTORIS (PAGINATED) ──
-        if (widget.histories.isEmpty && !widget.isLoading)
+        if (widget.histories.isEmpty && widget.isLoading)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(40.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Memuat data historis...',
+                    style: TextStyle(color: context.textSecondary, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else if (widget.histories.isEmpty)
           Center(
             child: Padding(
               padding: const EdgeInsets.all(20.0),

@@ -28,11 +28,7 @@ class PivotPointLocalDataSourceImpl implements PivotPointLocalDataSource {
     for (var item in data) {
       batch.insert('market_data', {
         'symbol': symbol,
-        'date': item.date, // Formatnya "YYYY-MM-DD"
-        'open': item.open,
-        'high': item.high,
-        'low': item.low,
-        'close': item.close,
+        ...item.toMap(),
       });
     }
     await batch.commit(noResult: true);
@@ -50,17 +46,7 @@ class PivotPointLocalDataSourceImpl implements PivotPointLocalDataSource {
       offset: offset,
     );
 
-    return maps
-        .map(
-          (map) => MarketData(
-            date: map['date'] as String,
-            open: map['open'] as double,
-            high: map['high'] as double,
-            low: map['low'] as double,
-            close: map['close'] as double,
-          ),
-        )
-        .toList();
+    return maps.map((map) => MarketData.fromMap(map)).toList();
   }
 
   @override

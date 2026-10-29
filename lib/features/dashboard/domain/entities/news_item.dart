@@ -18,4 +18,32 @@ class NewsItem {
   final String source;
   final String url;
   final String snippet;
+
+  /// Kebal terhadap obfuscation R8 (ProGuard) & null safety
+  factory NewsItem.fromMap(Map<String, dynamic> map) {
+    return NewsItem(
+      id: map['id']?.toString() ?? '',
+      title: map['title']?.toString() ?? '',
+      category: map['category']?.toString() ?? '',
+      timeAgo: map['timeAgo']?.toString() ?? '',
+      imageUrl: map['imageUrl']?.toString() ?? '',
+      source: map['source']?.toString() ?? 'TradingView / Market',
+      url: map['url']?.toString() ?? '',
+      snippet: map['snippet']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'category': category,
+      'timeAgo': timeAgo,
+      'imageUrl': imageUrl,
+      'source': source,
+      'url': url,
+      'snippet': snippet,
+    };
+  }
 }
+

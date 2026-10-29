@@ -300,7 +300,7 @@ class _NestViewState extends State<_NestView>
                         : NewsmakerTableWidget(
                             histories: viewModel.newsmakerHistories,
                             selectedSymbol: viewModel.selectedNewsmakerSymbol,
-                            isLoading: viewModel.isLoading,
+                            isLoading: viewModel.isHistoryLoading,
                             currentPage: viewModel.currentPage,
                             isFetchingMore: viewModel.isFetchingMore,
                             hasMoreData: viewModel.hasMoreData,

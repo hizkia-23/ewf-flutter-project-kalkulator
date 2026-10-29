@@ -18,20 +18,24 @@ class HistoryViewModel extends ChangeNotifier {
     loadData();
   }
 
-  /// Memuat data dari HistoryService ke state lokal
+  /// Memuat data dari HistoryService ke state lokal.
+  /// PERBAIKAN: Selalu panggil loadHistory(forceReload: true) untuk memastikan
+  /// data dari database SQLite selalu sinkron, terutama setelah insert baru
+  /// dari halaman Pivot/Nest.
   void loadData() {
-    if (!_historyService.isLoaded) {
-      _historyService.loadHistory().then((_) {
-        _goldHistoryList = List.from(_historyService.goldHistory);
-        _pivotHistoryList = List.from(_historyService.pivotHistory);
-        _nestHistoryList = List.from(_historyService.nestHistory);
-        notifyListeners();
-      });
-    }
+    // Langsung ambil data yang sudah ada di memori (untuk tampilan instan)
     _goldHistoryList = List.from(_historyService.goldHistory);
     _pivotHistoryList = List.from(_historyService.pivotHistory);
     _nestHistoryList = List.from(_historyService.nestHistory);
     notifyListeners();
+
+    // Kemudian reload dari database untuk memastikan data terbaru
+    _historyService.loadHistory(forceReload: true).then((_) {
+      _goldHistoryList = List.from(_historyService.goldHistory);
+      _pivotHistoryList = List.from(_historyService.pivotHistory);
+      _nestHistoryList = List.from(_historyService.nestHistory);
+      notifyListeners();
+    });
   }
 
   /// Menghapus satu item riwayat berdasarkan [id] dan [type] ('gold', 'pivot', 'nest').

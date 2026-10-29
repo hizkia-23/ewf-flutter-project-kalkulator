@@ -27,6 +27,7 @@ class NestViewModel extends ChangeNotifier {
   NestCalculation? result;
   String? errorMessage;
   bool isLoading = false;
+  bool isHistoryLoading = true;
   bool isManualMode = true;
   String symbol = 'XAU/USD';
   String lastUpdated = '';
@@ -67,6 +68,9 @@ class NestViewModel extends ChangeNotifier {
 
   // ── FUNGSI MENARIK DATA (CACHE-THEN-NETWORK) ──
   Future<void> _initData() async {
+    isHistoryLoading = true;
+    notifyListeners();
+
     try {
       final apiService = NewsmakerApiService();
       final dbHelper = DatabaseHelper.instance;
@@ -99,6 +103,7 @@ class NestViewModel extends ChangeNotifier {
         'Nikkei': nikkeiPage,
       };
 
+      isHistoryLoading = false;
       notifyListeners();
 
       // 2. SINKRONISASI API SILENT DI BELAKANG LAYAR
@@ -144,11 +149,16 @@ class NestViewModel extends ChangeNotifier {
           notifyListeners();
         }
       } catch (e) {
-        if (kDebugMode)
-          print('API Nest Gagal/Offline. Tetap aman pakai cache.');
+        if (kDebugMode) {
+          print('API Nest Gagal/Offline. Tetap aman pakai cache: $e');
+        }
       }
     } catch (e) {
-      if (kDebugMode) print('Kesalahan saat inisialisasi data Nest: $e');
+      isHistoryLoading = false;
+      notifyListeners();
+      if (kDebugMode) {
+        print('Kesalahan saat inisialisasi data Nest: $e');
+      }
     }
   }
 
